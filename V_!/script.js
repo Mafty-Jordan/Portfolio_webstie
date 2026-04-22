@@ -66,7 +66,7 @@
         });
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// ── Panda Node Network Background ──────────────────────────────────────────
+// ── Node Network Background ─────────────────────────────────────────────────
 (function () {
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
@@ -77,11 +77,9 @@ document.getElementById('year').textContent = new Date().getFullYear();
     const PALETTE  = ['#2d7d4e', '#4a9d6f', '#8b5fbf', '#a76fd0'];
     const NODE_N   = 90;
     const MAX_DIST = 155;
-    const PANDA_R  = 42;
 
-    let panda  = { x: W / 2, y: H / 2 };
-    let mouse  = { x: -9999, y: -9999 };
-    let nodes  = [];
+    let mouse = { x: -9999, y: -9999 };
+    let nodes = [];
 
     function dist(ax, ay, bx, by) {
         const dx = ax - bx, dy = ay - by;
@@ -91,11 +89,8 @@ document.getElementById('year').textContent = new Date().getFullYear();
     class Node {
         constructor() { this.init(); }
         init() {
-            // keep nodes away from panda centre on spawn
-            do {
-                this.x = Math.random() * W;
-                this.y = Math.random() * H;
-            } while (dist(this.x, this.y, panda.x, panda.y) < PANDA_R + 30);
+            this.x = Math.random() * W;
+            this.y = Math.random() * H;
 
             const speed = Math.random() * 0.45 + 0.1;
             const angle = Math.random() * Math.PI * 2;
@@ -120,14 +115,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
                 this.x += ((this.x - mouse.x) / md) * f * 2.5;
                 this.y += ((this.y - mouse.y) / md) * f * 2.5;
             }
-
-            // keep clear of panda
-            const pd = dist(this.x, this.y, panda.x, panda.y);
-            if (pd < PANDA_R + 18) {
-                const f = 3;
-                this.x += ((this.x - panda.x) / pd) * f;
-                this.y += ((this.y - panda.y) / pd) * f;
-            }
         }
 
         draw() {
@@ -143,8 +130,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
     function drawEdges() {
         for (let i = 0; i < nodes.length; i++) {
             const a = nodes[i];
-
-            // node ↔ node
             for (let j = i + 1; j < nodes.length; j++) {
                 const b = nodes[j];
                 const d = dist(a.x, a.y, b.x, b.y);
@@ -162,131 +147,8 @@ document.getElementById('year').textContent = new Date().getFullYear();
                 ctx.lineWidth = 0.9;
                 ctx.stroke();
             }
-
-            // node ↔ panda
-            const pd = dist(a.x, a.y, panda.x, panda.y);
-            const maxPd = MAX_DIST * 1.6;
-            if (pd < maxPd) {
-                const alpha = (1 - pd / maxPd) * 0.55;
-                const g = ctx.createLinearGradient(a.x, a.y, panda.x, panda.y);
-                g.addColorStop(0, a.color);
-                g.addColorStop(1, 'rgba(232,232,232,0.75)');
-                ctx.globalAlpha = alpha;
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y);
-                ctx.lineTo(panda.x, panda.y);
-                ctx.strokeStyle = g;
-                ctx.lineWidth = 1.3;
-                ctx.stroke();
-            }
         }
         ctx.globalAlpha = 1;
-    }
-
-    function drawPanda(x, y, r) {
-        // halo glow
-        const glow = ctx.createRadialGradient(x, y, r * 0.4, x, y, r * 2.4);
-        glow.addColorStop(0, 'rgba(139,95,191,0.18)');
-        glow.addColorStop(0.5, 'rgba(45,125,78,0.08)');
-        glow.addColorStop(1, 'transparent');
-        ctx.beginPath();
-        ctx.arc(x, y, r * 2.4, 0, Math.PI * 2);
-        ctx.fillStyle = glow;
-        ctx.fill();
-
-        // ears (behind face)
-        const er = r * 0.37;
-        for (const s of [-1, 1]) {
-            ctx.beginPath();
-            ctx.arc(x + s * r * 0.68, y - r * 0.63, er, 0, Math.PI * 2);
-            ctx.fillStyle = '#0f0f0f';
-            ctx.fill();
-            // inner ear
-            ctx.beginPath();
-            ctx.arc(x + s * r * 0.68, y - r * 0.63, er * 0.48, 0, Math.PI * 2);
-            ctx.fillStyle = '#282828';
-            ctx.fill();
-        }
-
-        // face base
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#ececec';
-        ctx.fill();
-        // subtle violet ring
-        ctx.strokeStyle = 'rgba(139,95,191,0.65)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // eye patches
-        for (const s of [-1, 1]) {
-            ctx.save();
-            ctx.translate(x + s * r * 0.3, y - r * 0.09);
-            ctx.scale(0.82, 1.12);
-            ctx.beginPath();
-            ctx.arc(0, 0, r * 0.265, 0, Math.PI * 2);
-            ctx.fillStyle = '#101010';
-            ctx.fill();
-            ctx.restore();
-        }
-
-        // eyes: white → pupil → shine
-        for (const s of [-1, 1]) {
-            // sclera
-            ctx.beginPath();
-            ctx.arc(x + s * r * 0.3, y - r * 0.09, r * 0.125, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.fill();
-            // pupil
-            ctx.beginPath();
-            ctx.arc(x + s * r * 0.305, y - r * 0.08, r * 0.058, 0, Math.PI * 2);
-            ctx.fillStyle = '#060606';
-            ctx.fill();
-            // catchlight
-            ctx.beginPath();
-            ctx.arc(x + s * r * 0.32, y - r * 0.105, r * 0.024, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.92)';
-            ctx.fill();
-        }
-
-        // nose
-        ctx.save();
-        ctx.translate(x, y + r * 0.19);
-        ctx.scale(1.35, 0.82);
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 0.095, 0, Math.PI * 2);
-        ctx.fillStyle = '#111';
-        ctx.fill();
-        ctx.restore();
-
-        // philtrum line
-        ctx.beginPath();
-        ctx.moveTo(x, y + r * 0.24);
-        ctx.lineTo(x, y + r * 0.30);
-        ctx.strokeStyle = '#222';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        // smile (two curves)
-        for (const s of [-1, 1]) {
-            ctx.beginPath();
-            ctx.moveTo(x, y + r * 0.30);
-            ctx.quadraticCurveTo(
-                x + s * r * 0.2,  y + r * 0.42,
-                x + s * r * 0.3,  y + r * 0.37
-            );
-            ctx.strokeStyle = '#1a1a1a';
-            ctx.lineWidth = 1.4;
-            ctx.stroke();
-        }
-
-        // cheek blush
-        for (const s of [-1, 1]) {
-            ctx.beginPath();
-            ctx.ellipse(x + s * r * 0.56, y + r * 0.26, r * 0.18, r * 0.1, 0, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,130,130,0.18)';
-            ctx.fill();
-        }
     }
 
     for (let i = 0; i < NODE_N; i++) nodes.push(new Node());
@@ -295,15 +157,12 @@ document.getElementById('year').textContent = new Date().getFullYear();
         ctx.clearRect(0, 0, W, H);
         drawEdges();
         nodes.forEach(n => { n.update(); n.draw(); });
-        drawPanda(panda.x, panda.y, PANDA_R);
         requestAnimationFrame(loop);
     }
 
     window.addEventListener('resize', () => {
         W = canvas.width  = window.innerWidth;
         H = canvas.height = window.innerHeight;
-        panda.x = W / 2;
-        panda.y = H / 2;
     });
 
     window.addEventListener('mousemove', e => {
